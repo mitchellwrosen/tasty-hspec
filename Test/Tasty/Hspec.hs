@@ -13,7 +13,7 @@ import Test.Hspec
 
 import Data.Typeable        (Typeable)
 import Test.Tasty           (TestName, TestTree)
-import Test.Tasty.Providers (IsTest(..), Result(..), singleTest)
+import Test.Tasty.Providers (IsTest(..), singleTest, testPassed, testFailed)
 import Test.Hspec.Runner    (Summary(..), hspecResult)
 
 -- | Turn an hspec @Spec@ into a tasty @TestTree@.
@@ -49,6 +49,7 @@ newtype MySpec = MySpec Spec deriving Typeable
 
 instance IsTest MySpec where
     run _ (MySpec spec) _ = do
-        (Summary examples failures) <- hspecResult spec
-        return $ Result (failures == 0) ""
+        (Summary _ failures) <- hspecResult spec
+        return $ if (failures == 0) then testPassed "" else testFailed ""
+        --return $ Result (failures == 0) ""
     testOptions = return []
