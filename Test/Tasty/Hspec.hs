@@ -9,12 +9,16 @@ module Test.Tasty.Hspec
     , Test.Tasty.TestTree
     ) where
 
-import Test.Hspec
+import           Control.Applicative ((<$>))
+import           Data.Typeable       (Typeable)
+import           Test.Hspec          (Spec)
+import           Test.Hspec.Core
+import           Test.Hspec.Runner   (Config(..), defaultConfig)
+import           Test.QuickCheck     (Args)
 
-import Data.Typeable        (Typeable)
-import Test.Tasty           (TestName, TestTree)
-import Test.Tasty.Providers (IsTest(..), singleTest, testPassed, testFailed)
-import Test.Hspec.Runner    (Summary(..), hspecResult)
+import           Test.Tasty           (TestName, TestTree, testGroup)
+import           Test.Tasty.Providers (IsTest(..), singleTest, testPassed, testFailed)
+import qualified Test.Tasty.Providers as T
 
 -- | Turn an hspec @Spec@ into a tasty @TestTree@.
 --
@@ -43,13 +47,33 @@ import Test.Hspec.Runner    (Summary(..), hspecResult)
 -- >         it "sticks its head in sand" $
 -- >             fmap (`shouldBe` InSand) getHeadState
 testCase :: TestName -> Spec -> TestTree
-testCase name = singleTest name . MySpec
+testCase name = testGroup name . map specTreeToTestTree . runSpecM
 
-newtype MySpec = MySpec Spec deriving Typeable
+-- Convert a hspec SpecTree into a tasty TestTree.
+specTreeToTestTree :: SpecTree -> TestTree
+specTreeToTestTree (SpecGroup name specs) = testGroup name (map specTreeToTestTree specs)
+specTreeToTestTree (SpecItem (Item _ name example)) = singleTest name (MyExample example)
 
-instance IsTest MySpec where
-    run _ (MySpec spec) _ = do
-        (Summary _ failures) <- hspecResult spec
-        return $ if (failures == 0) then testPassed "" else testFailed ""
-        --return $ Result (failures == 0) ""
+newtype MyExample = MyExample (Params -> (IO () -> IO ()) -> IO Result) deriving Typeable
+
+instance IsTest MyExample where
+    run _ (MyExample f) _ = hspecResultToTastyResult <$> f params id
+      where
+        hspecResultToTastyResult :: Result -> T.Result
+        hspecResultToTastyResult Success     = testPassed ""
+        hspecResultToTastyResult (Pending _) = testFailed "(test pending)"
+        hspecResultToTastyResult (Fail str)  = testFailed str
+
+        params :: Params
+        params = Params quickCheckArgs smallCheckDepth reportProgress
+
+        quickCheckArgs :: Args
+        quickCheckArgs = configQuickCheckArgs defaultConfig
+
+        smallCheckDepth :: Int
+        smallCheckDepth = configSmallCheckDepth defaultConfig
+
+        reportProgress :: Progress -> IO ()
+        reportProgress _ = return ()
+
     testOptions = return []
