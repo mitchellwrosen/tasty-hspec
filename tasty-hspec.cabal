@@ -1,5 +1,5 @@
 name:                tasty-hspec
-version:             0.1
+version:             0.1.0.1
 synopsis:            Hspec support for the Tasty test framework.
 description:         Hspec support for the Tasty test framework.
 
