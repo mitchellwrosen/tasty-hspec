@@ -1,9 +1,18 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 
-module Test.Tasty.Hspec
-    ( testSpec
-    -- * Re-exports
+module Test.Tasty.Hspec (
+    -- * Test
+      testSpec
+    -- * Options
+    -- | === Re-exported from <https://hackage.haskell.org/package/tasty-smallcheck tasty-smallcheck>
+    , SmallCheckDepth(..)
+    -- | === Re-exported from <https://hackage.haskell.org/package/tasty-quickcheck tasty-quickcheck>
+    , QuickCheckMaxRatio(..)
+    , QuickCheckMaxSize(..)
+    , QuickCheckReplay(..)
+    , QuickCheckTests(..)
+    -- * Hspec re-export
     , module Test.Hspec
     ) where
 
@@ -23,9 +32,14 @@ import qualified Test.Tasty.Providers   as T
 import qualified Test.Tasty.QuickCheck  as TQC
 import           System.Random
 
-import Test.Hspec -- for re-export
+-- For re-export.
+import Test.Hspec
+import Test.Tasty.SmallCheck (SmallCheckDepth(..))
+import Test.Tasty.QuickCheck (QuickCheckMaxRatio(..), QuickCheckMaxSize(..)
+                             , QuickCheckReplay(..), QuickCheckTests(..))
 
--- | Create a tasty 'T.TestTree' from an HSpec 'H.Spec'.
+-- | Create a <https://hackage.haskell.org/package/tasty tasty> 'T.TestTree' from an
+-- <https://hackage.haskell.org/package/hspec Hspec> 'H.Spec'.
 testSpec :: T.TestName -> H.Spec -> IO T.TestTree
 testSpec name spec = H.runSpecM spec >>= fmap (T.testGroup name . join) . mapM specTreeToTestTrees
 
