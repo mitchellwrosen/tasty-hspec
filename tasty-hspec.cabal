@@ -1,5 +1,5 @@
 name:                tasty-hspec
-version:             0.2
+version:             0.3
 synopsis:            Hspec support for the Tasty test framework.
 description:         Hspec support for the Tasty test framework.
 
@@ -16,7 +16,7 @@ library
   exposed-modules:     Test.Tasty.Hspec
   other-extensions:    DeriveDataTypeable
   build-depends:       base             ==4.*
-                     , hspec            >=1.11.0 && <1.12.0
+                     , hspec            >=1.11.0 && <2.0.0
                      , QuickCheck       >=2.7    && <3
                      , tasty            >= 0.8   && <1.0
                      , tasty-smallcheck >=0.1    && <0.9
