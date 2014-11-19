@@ -21,7 +21,7 @@ import           Control.Monad          (join)
 import           Data.Proxy
 import           Data.Typeable          (Typeable)
 import qualified Test.Hspec             as H
-import qualified Test.Hspec.Core        as H
+import qualified Test.Hspec.Core.Spec   as H
 import qualified Test.Hspec.Runner      as H
 import qualified Test.QuickCheck        as QC
 import qualified Test.QuickCheck.Random as QC
@@ -43,22 +43,26 @@ import Test.Tasty.QuickCheck (QuickCheckMaxRatio(..), QuickCheckMaxSize(..)
 testSpec :: T.TestName -> H.Spec -> IO T.TestTree
 testSpec name spec = H.runSpecM spec >>= fmap (T.testGroup name . join) . mapM specTreeToTestTrees
 
-specTreeToTestTrees :: H.SpecTree -> IO [T.TestTree]
-specTreeToTestTrees (H.SpecGroup name specs) = return . T.testGroup name . join <$> mapM specTreeToTestTrees specs
-specTreeToTestTrees (H.BuildSpecs action)    = action >>= fmap join . mapM specTreeToTestTrees
-specTreeToTestTrees (H.SpecItem name item)   = return [T.singleTest name (Item item)]
+specTreeToTestTrees :: H.SpecTree () -> IO [T.TestTree]
+specTreeToTestTrees (H.Node name spec_trees) = do
+    test_trees <- join <$> mapM specTreeToTestTrees spec_trees
+    return [T.testGroup name test_trees]
+specTreeToTestTrees (H.NodeWithCleanup cleanup spec_trees) = do
+    cleanup ()
+    join <$> mapM specTreeToTestTrees spec_trees
+specTreeToTestTrees (H.Leaf item) = return [T.singleTest (H.itemRequirement item) (Item item)]
 
 hspecResultToTastyResult :: H.Result -> T.Result
 hspecResultToTastyResult H.Success        = T.testPassed ""
 hspecResultToTastyResult (H.Pending mstr) = T.testFailed ("test pending" ++ maybe "" (": " ++) mstr)
 hspecResultToTastyResult (H.Fail str)     = T.testFailed str
 
-newtype Item = Item H.Item
+newtype Item = Item (H.Item ())
     deriving Typeable
 
 instance T.IsTest Item where
-    run opts (Item (H.Item _ example)) progress =
-        hspecResultToTastyResult <$> example params id hprogress
+    run opts (Item (H.Item _ _ _ example)) progress =
+        hspecResultToTastyResult <$> example params ($ ()) hprogress
       where
         params :: H.Params
         params = H.Params
