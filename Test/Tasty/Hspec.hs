@@ -16,21 +16,18 @@ module Test.Tasty.Hspec (
     , module Test.Hspec
     ) where
 
-import           Control.Applicative    ((<$>))
-import           Control.Monad          (join)
+import           Control.Applicative   ((<$>))
 import           Data.Proxy
-import           Data.Typeable          (Typeable)
-import qualified Test.Hspec             as H
-import qualified Test.Hspec.Core.Spec   as H
-import qualified Test.Hspec.Runner      as H
-import qualified Test.QuickCheck        as QC
-import qualified Test.QuickCheck.Random as QC
-import qualified Test.Tasty             as T
-import qualified Test.Tasty.SmallCheck  as TSC
-import qualified Test.Tasty.Options     as T
-import qualified Test.Tasty.Providers   as T
-import qualified Test.Tasty.QuickCheck  as TQC
-import           System.Random
+import           Data.Typeable         (Typeable)
+import qualified Test.Hspec            as H
+import qualified Test.Hspec.Core.Spec  as H
+import qualified Test.QuickCheck       as QC
+import qualified Test.Tasty            as T
+import qualified Test.Tasty.SmallCheck as TSC
+import qualified Test.Tasty.Options    as T
+import qualified Test.Tasty.Providers  as T
+import qualified Test.Tasty.QuickCheck as TQC
+import qualified Test.Tasty.Runners    as T
 
 -- For re-export.
 import Test.Hspec
@@ -41,16 +38,14 @@ import Test.Tasty.QuickCheck (QuickCheckMaxRatio(..), QuickCheckMaxSize(..)
 -- | Create a <https://hackage.haskell.org/package/tasty tasty> 'T.TestTree' from an
 -- <https://hackage.haskell.org/package/hspec Hspec> 'H.Spec'.
 testSpec :: T.TestName -> H.Spec -> IO T.TestTree
-testSpec name spec = H.runSpecM spec >>= fmap (T.testGroup name . join) . mapM specTreeToTestTrees
+testSpec name spec = T.testGroup name . map specTreeToTestTree <$> H.runSpecM spec
 
-specTreeToTestTrees :: H.SpecTree () -> IO [T.TestTree]
-specTreeToTestTrees (H.Node name spec_trees) = do
-    test_trees <- join <$> mapM specTreeToTestTrees spec_trees
-    return [T.testGroup name test_trees]
-specTreeToTestTrees (H.NodeWithCleanup cleanup spec_trees) = do
-    cleanup ()
-    join <$> mapM specTreeToTestTrees spec_trees
-specTreeToTestTrees (H.Leaf item) = return [T.singleTest (H.itemRequirement item) (Item item)]
+specTreeToTestTree :: H.SpecTree () -> T.TestTree
+specTreeToTestTree (H.Node name spec_trees) = T.testGroup name (map specTreeToTestTree spec_trees)
+specTreeToTestTree (H.NodeWithCleanup cleanup spec_trees) =
+    let test_tree = specTreeToTestTree (H.Node "(unnamed)" spec_trees)
+    in T.WithResource (T.ResourceSpec (return ()) cleanup) (const test_tree)
+specTreeToTestTree (H.Leaf item) = T.singleTest (H.itemRequirement item) (Item item)
 
 hspecResultToTastyResult :: H.Result -> T.Result
 hspecResultToTastyResult H.Success        = T.testPassed ""
@@ -61,8 +56,8 @@ newtype Item = Item (H.Item ())
     deriving Typeable
 
 instance T.IsTest Item where
-    run opts (Item (H.Item _ _ _ example)) progress =
-        hspecResultToTastyResult <$> example params ($ ()) hprogress
+    run opts (Item (H.Item _ _ _ ex)) progress =
+        hspecResultToTastyResult <$> ex params ($ ()) hprogress
       where
         params :: H.Params
         params = H.Params
