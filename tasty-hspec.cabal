@@ -3,7 +3,7 @@ version:             1.1
 synopsis:            Hspec support for the Tasty test framework.
 description:         Hspec support for the Tasty test framework.
 
-homepage:            http://github.com/mitchellwrosen/tasty-hspec
+homepage:            https://github.com/mitchellwrosen/tasty-hspec
 license:             BSD3
 license-file:        LICENSE
 author:              Mitchell Rosen
