@@ -50,7 +50,11 @@ specTreeToTestTree (H.Leaf item) = T.singleTest (H.itemRequirement item) (Item i
 hspecResultToTastyResult :: H.Result -> T.Result
 hspecResultToTastyResult H.Success        = T.testPassed ""
 hspecResultToTastyResult (H.Pending mstr) = T.testFailed ("test pending" ++ maybe "" (": " ++) mstr)
+#if MIN_VERSION_hspec(2,2,0)
+hspecResultToTastyResult (H.Fail _ str)   = T.testFailed str
+#else
 hspecResultToTastyResult (H.Fail str)     = T.testFailed str
+#endif
 
 newtype Item = Item (H.Item ())
     deriving Typeable
