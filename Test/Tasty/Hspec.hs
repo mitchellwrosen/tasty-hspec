@@ -4,6 +4,7 @@
 module Test.Tasty.Hspec (
     -- * Test
       testSpec
+    , testSpecs
     -- * Options
     -- | === Re-exported from <https://hackage.haskell.org/package/tasty-smallcheck tasty-smallcheck>
     , SmallCheckDepth(..)
@@ -38,7 +39,14 @@ import Test.Tasty.QuickCheck (QuickCheckMaxRatio(..), QuickCheckMaxSize(..)
 -- | Create a <https://hackage.haskell.org/package/tasty tasty> 'T.TestTree' from an
 -- <https://hackage.haskell.org/package/hspec Hspec> 'H.Spec'.
 testSpec :: T.TestName -> H.Spec -> IO T.TestTree
-testSpec name spec = T.testGroup name . map specTreeToTestTree <$> H.runSpecM spec
+testSpec name spec = T.testGroup name <$> testSpecs spec
+
+-- | Create a list of <https://hackage.haskell.org/package/tasty tasty>
+-- 'T.TestTree' from a <https://hackage.haskell.org/package/hspec Hspec>
+-- 'H.Spec' test. This returns the same tests as 'testSpec' but doesn't create
+-- a <https://hackage.haskell.org/package/tasty tasty> test group from them.
+testSpecs :: H.Spec -> IO [T.TestTree]
+testSpecs spec = map specTreeToTestTree <$> H.runSpecM spec
 
 specTreeToTestTree :: H.SpecTree () -> T.TestTree
 specTreeToTestTree (H.Node name spec_trees) = T.testGroup name (map specTreeToTestTree spec_trees)
