@@ -27,6 +27,9 @@ import qualified Test.Hspec as H
 import qualified Test.Hspec.Core.Formatters as H
 import qualified Test.Hspec.Core.Spec as H
 import qualified Test.QuickCheck as QC
+#if MIN_VERSION_tasty_quickcheck(0,9,0)
+import qualified Test.QuickCheck.Random as QCR
+#endif
 import qualified Test.Tasty as T
 import qualified Test.Tasty.SmallCheck as TSC
 import qualified Test.Tasty.Options as T
@@ -88,7 +91,11 @@ instance T.IsTest Item where
         , QC.maxDiscardRatio = max_ratio
         , QC.maxSize         = max_size
         , QC.maxSuccess      = num_tests
+#if MIN_VERSION_tasty_quickcheck(0,9,0)
+        , QC.replay          = (\seed -> (QCR.mkQCGen seed, seed)) <$> replay
+#else
         , QC.replay          = replay
+#endif
         }
        where
         TQC.QuickCheckTests    num_tests = T.lookupOption opts
