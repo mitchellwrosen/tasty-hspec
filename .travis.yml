@@ -55,24 +55,24 @@ matrix:
     ##
     ## Stack (OSX)
     ##
-  - env: BUILD=stack ARGS=""
-    compiler: ": #stack default osx"
-    os: osx
-  - env: BUILD=stack ARGS="--resolver lts-3"
-    compiler: ": #stack lts-3 osx"
-    os: osx
-  - env: BUILD=stack ARGS="--resolver lts-6"
-    compiler: ": #stack lts-6 osx"
-    os: osx
-  - env: BUILD=stack ARGS="--resolver lts-7"
-    compiler: ": #stack lts-7 osx"
-    os: osx
-  - env: BUILD=stack ARGS="--resolver lts-8"
-    compiler: ": #stack lts-8 osx"
-    os: osx
-  - env: BUILD=stack ARGS="--resolver nightly"
-    compiler: ": #stack nightly osx"
-    os: osx
+  # - env: BUILD=stack ARGS=""
+  #   compiler: ": #stack default osx"
+  #   os: osx
+  # - env: BUILD=stack ARGS="--resolver lts-3"
+  #   compiler: ": #stack lts-3 osx"
+  #   os: osx
+  # - env: BUILD=stack ARGS="--resolver lts-6"
+  #   compiler: ": #stack lts-6 osx"
+  #   os: osx
+  # - env: BUILD=stack ARGS="--resolver lts-7"
+  #   compiler: ": #stack lts-7 osx"
+  #   os: osx
+  # - env: BUILD=stack ARGS="--resolver lts-8"
+  #   compiler: ": #stack lts-8 osx"
+  #   os: osx
+  # - env: BUILD=stack ARGS="--resolver nightly"
+  #   compiler: ": #stack nightly osx"
+  #   os: osx
 
   allow_failures:
   - env: BUILD=cabal GHCVER=head CABALVER=head HAPPYVER=1.19.5 ALEXVER=3.1.7
