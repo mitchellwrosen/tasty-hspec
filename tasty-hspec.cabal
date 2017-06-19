@@ -20,9 +20,9 @@ source-repository head
 library
   exposed-modules:     Test.Tasty.Hspec
   other-extensions:    DeriveDataTypeable
-  build-depends:       base             ==4.*
-                     , hspec            >=2 && <2.5
-                     , hspec-core       >=2 && <2.5
+  build-depends:       base             >=4.8 && <5
+                     , hspec            >=2   && <2.5
+                     , hspec-core       >=2   && <2.5
                      , QuickCheck       >=2.7
                      , tagged           >=0.7
                      , tasty            >=0.8
