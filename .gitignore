@@ -1,6 +1,3 @@
 dist/
-.*
-!.travis.yml
-cabal.config 
-cabal.sandbox.config
-examples/*
+dist-newstyle/
+.stack-work/
