@@ -1,7 +1,5 @@
 {-# LANGUAGE CPP                #-}
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE InstanceSigs       #-}
-{-# LANGUAGE LambdaCase         #-}
 
 module Test.Tasty.Hspec (
     -- * Test
@@ -22,7 +20,6 @@ module Test.Tasty.Hspec (
 import Control.Applicative ((<$>))
 import Data.Monoid (mconcat)
 import Data.Proxy
-import Data.Tagged (Tagged)
 import Data.Typeable (Typeable)
 
 import qualified Test.Hspec as H
@@ -56,22 +53,23 @@ testSpecs :: H.Spec -> IO [T.TestTree]
 testSpecs spec = map specTreeToTestTree <$> H.runSpecM spec
 
 specTreeToTestTree :: H.SpecTree () -> T.TestTree
-specTreeToTestTree = \case
-  H.Node name spec_trees ->
-    T.testGroup name (map specTreeToTestTree spec_trees)
-  H.NodeWithCleanup cleanup spec_trees ->
-    T.WithResource (T.ResourceSpec (return ()) cleanup) (const test_tree)
-   where
-    test_tree :: T.TestTree
-    test_tree = specTreeToTestTree (H.Node "(unnamed)" spec_trees)
-  H.Leaf item ->
-    T.singleTest (H.itemRequirement item) (Item item)
+specTreeToTestTree spec_tree =
+  case spec_tree of
+    H.Node name spec_trees ->
+      T.testGroup name (map specTreeToTestTree spec_trees)
+    H.NodeWithCleanup cleanup spec_trees ->
+      T.WithResource (T.ResourceSpec (return ()) cleanup) (const test_tree)
+     where
+      test_tree :: T.TestTree
+      test_tree = specTreeToTestTree (H.Node "(unnamed)" spec_trees)
+    H.Leaf item ->
+      T.singleTest (H.itemRequirement item) (Item item)
 
 newtype Item = Item (H.Item ())
   deriving Typeable
 
 instance T.IsTest Item where
-  run :: T.OptionSet -> Item -> (T.Progress -> IO ()) -> IO T.Result
+  -- run :: T.OptionSet -> Item -> (T.Progress -> IO ()) -> IO T.Result
   run opts (Item (H.Item _ _ _ ex)) progress = do
     qc_args <- tastyOptionSetToQuickCheckArgs opts
 
@@ -94,12 +92,12 @@ instance T.IsTest Item where
       TSC.SmallCheckDepth depth = T.lookupOption opts
 
     hprogress :: H.Progress -> IO ()
-    hprogress (x,y) = progress (T.Progress
+    hprogress (x,y) = progress T.Progress
       { T.progressText    = ""
       , T.progressPercent = fromIntegral x / fromIntegral y
-      })
+      }
 
-  testOptions :: Tagged Item [T.OptionDescription]
+  -- testOptions :: Tagged Item [T.OptionDescription]
   testOptions = return
     [ T.Option (Proxy :: Proxy TQC.QuickCheckTests)
     , T.Option (Proxy :: Proxy TQC.QuickCheckReplay)
@@ -128,22 +126,23 @@ tastyOptionSetToQuickCheckArgs opts =
 #endif
 
 hspecResultToTastyResult :: H.Result -> T.Result
-hspecResultToTastyResult = \case
-  H.Success -> T.testPassed ""
-  H.Pending mstr -> T.testFailed ("Test pending" ++ maybe "" (": " ++) mstr)
+hspecResultToTastyResult result =
+  case result of
+    H.Success -> T.testPassed ""
+    H.Pending mstr -> T.testFailed ("Test pending" ++ maybe "" (": " ++) mstr)
 #if MIN_VERSION_hspec(2,4,0)
-  H.Failure _ reason ->
-    case reason of
-      H.NoReason   -> T.testFailed ""
-      H.Reason str -> T.testFailed str
-      H.ExpectedButGot preface expected actual ->
-        T.testFailed $ mconcat
-          [ maybe "" (++ ": ") preface
-          , "expected " ++ expected
-          , ", but got " ++ actual
-          ]
+    H.Failure _ reason ->
+      case reason of
+        H.NoReason   -> T.testFailed ""
+        H.Reason str -> T.testFailed str
+        H.ExpectedButGot preface expected actual ->
+          T.testFailed $ mconcat
+            [ maybe "" (++ ": ") preface
+            , "expected " ++ expected
+            , ", but got " ++ actual
+            ]
 #elif MIN_VERSION_hspec(2,2,0)
-  H.Fail _ str -> T.testFailed str
+    H.Fail _ str -> T.testFailed str
 #else
-  H.Fail str -> T.testFailed str
+    H.Fail str -> T.testFailed str
 #endif
