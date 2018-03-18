@@ -1,23 +1,25 @@
 {-# LANGUAGE CPP                #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 
-module Test.Tasty.Hspec (
-    -- * Test
+-- | @hspec@ and @tasty@ serve similar purposes; consider using one or the
+-- other.
+--
+-- However, in a pinch, this module allows you to run an @hspec@ 'H.Spec' as a
+-- @tasty@ 'T.TestTree'.
+--
+
+module Test.Tasty.Hspec
+    ( -- * Documentation
       testSpec
     , testSpecs
-    -- * Options
-    -- | === Re-exported from <https://hackage.haskell.org/package/tasty-smallcheck tasty-smallcheck>
-    , SmallCheckDepth(..)
-    -- | === Re-exported from <https://hackage.haskell.org/package/tasty-quickcheck tasty-quickcheck>
-    , QuickCheckMaxRatio(..)
-    , QuickCheckMaxSize(..)
-    , QuickCheckReplay(..)
-    , QuickCheckTests(..)
-    -- * Hspec re-export
     , module Test.Hspec
+      -- * Examples
+      -- $examples
     ) where
 
 import Control.Applicative ((<$>))
+import Control.Exception (SomeException)
+import Data.Maybe (catMaybes, fromMaybe)
 import Data.Monoid (mconcat)
 import Data.Proxy
 import Data.Typeable (Typeable)
@@ -35,10 +37,34 @@ import qualified Test.Tasty.Runners as T
 
 -- For re-export.
 import Test.Hspec
-import Test.Tasty.SmallCheck (SmallCheckDepth(..))
-import Test.Tasty.QuickCheck
-  (QuickCheckMaxRatio(..), QuickCheckMaxSize(..), QuickCheckReplay(..),
-    QuickCheckTests(..))
+
+-- $examples
+--
+-- The simplest usage of this library involves first creating a 'T.TestTree' in
+-- @IO@, then running it with 'T.defaultMain'.
+--
+-- @
+-- main = do
+--   spec <- 'testSpec' "spec" mySpec
+--   'T.defaultMain'
+--     ('T.testGroup' "tests"
+--       [ spec
+--       , ...
+--       ])
+-- @
+--
+-- However, if you don't do any @IO@ during 'Spec' creation, or the @IO@ need
+-- not be performed at any particular time relative to other @IO@ actions, it's
+-- perfectly fine to use 'System.IO.unsafePerformIO'.
+--
+-- @
+-- main = do
+--   'T.defaultMain'
+--     ('T.testGroup' "tests"
+--       [ 'System.IO.unsafePerformIO' ('testSpec' "spec" mySpec)
+--       , ...
+--       ])
+-- @
 
 -- | Create a <https://hackage.haskell.org/package/tasty tasty> 'T.TestTree' from an
 -- <https://hackage.haskell.org/package/hspec Hspec> 'H.Spec'.
@@ -46,8 +72,8 @@ testSpec :: T.TestName -> H.Spec -> IO T.TestTree
 testSpec name spec = T.testGroup name <$> testSpecs spec
 
 -- | Create a list of <https://hackage.haskell.org/package/tasty tasty>
--- 'T.TestTree' from a <https://hackage.haskell.org/package/hspec Hspec>
--- 'H.Spec' test. This returns the same tests as 'testSpec' but doesn't create
+-- 'T.TestTree' from an <https://hackage.haskell.org/package/hspec Hspec>
+-- 'H.Spec'. This returns the same tests as 'testSpec' but doesn't create
 -- a <https://hackage.haskell.org/package/tasty tasty> test group from them.
 testSpecs :: H.Spec -> IO [T.TestTree]
 testSpecs spec = map specTreeToTestTree <$> H.runSpecM spec
@@ -65,7 +91,8 @@ specTreeToTestTree spec_tree =
     H.Leaf item ->
       T.singleTest (H.itemRequirement item) (Item item)
 
-newtype Item = Item (H.Item ())
+newtype Item
+  = Item (H.Item ())
   deriving Typeable
 
 instance T.IsTest Item where
@@ -79,12 +106,13 @@ instance T.IsTest Item where
           , H.paramsSmallCheckDepth = sc_depth
           }
 
-#if MIN_VERSION_hspec(2,4,0)
-    either (T.testFailed . H.formatException) hspecResultToTastyResult
+#if MIN_VERSION_hspec(2,4,0) && !MIN_VERSION_hspec(2,5,0)
+    either handleUncaughtException hspecResultToTastyResult
 #else
     hspecResultToTastyResult
 #endif
       <$> ex params ($ ()) hprogress
+
    where
     sc_depth :: Int
     sc_depth = depth
@@ -126,23 +154,57 @@ tastyOptionSetToQuickCheckArgs opts =
 #endif
 
 hspecResultToTastyResult :: H.Result -> T.Result
+#if MIN_VERSION_hspec(2,5,0)
+hspecResultToTastyResult (H.Result _ result) =
+#else
 hspecResultToTastyResult result =
+#endif
   case result of
-    H.Success -> T.testPassed ""
-    H.Pending mstr -> T.testFailed ("Test pending" ++ maybe "" (": " ++) mstr)
+    H.Success ->
+      T.testPassed ""
+
+#if MIN_VERSION_hspec(2,5,0)
+    H.Pending _ x ->
+#else
+    H.Pending x ->
+#endif
+      handleResultPending x
+
 #if MIN_VERSION_hspec(2,4,0)
-    H.Failure _ reason ->
-      case reason of
-        H.NoReason   -> T.testFailed ""
-        H.Reason str -> T.testFailed str
-        H.ExpectedButGot preface expected actual ->
-          T.testFailed $ mconcat
-            [ maybe "" (++ ": ") preface
-            , "expected " ++ expected
-            , ", but got " ++ actual
-            ]
+    H.Failure _ x ->
+      handleResultFailure x
 #elif MIN_VERSION_hspec(2,2,0)
     H.Fail _ str -> T.testFailed str
 #else
     H.Fail str -> T.testFailed str
 #endif
+
+handleResultPending :: Maybe String -> T.Result
+handleResultPending x =
+  T.testFailed ("# PENDING: " ++ fromMaybe "No reason given" x)
+
+-- FailureReason
+--
+-- - Introduced in 2.4.0
+-- - Error constructor added in 2.5.0
+#if MIN_VERSION_hspec(2,4,0)
+handleResultFailure :: H.FailureReason -> T.Result
+handleResultFailure reason =
+  case reason of
+    H.NoReason -> T.testFailed ""
+    H.Reason x -> T.testFailed x
+    H.ExpectedButGot preface expected actual ->
+      T.testFailed . unlines . catMaybes $
+        [ preface
+        , Just ("expected: " ++ expected)
+        , Just (" but got: " ++ actual)
+        ]
+#if MIN_VERSION_hspec(2,5,0)
+    H.Error _ ex ->
+      handleUncaughtException ex
+#endif
+#endif
+
+handleUncaughtException :: SomeException -> T.Result
+handleUncaughtException ex =
+  T.testFailed ("uncaught exception: " ++ H.formatException ex)

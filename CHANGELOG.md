@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to the [Haskell Package Versioning Policy](https://pvp.haskell.org/).
 
+## [1.1.4] - 2018-3-18
+
+### Changed
+- Support hspec-2.5.0
+
+### Removed
+- Re-exports of QuickCheck and SmallCheck options
+
 ## [1.1.3.3] - 2018-1-26
 
 ### Removed
