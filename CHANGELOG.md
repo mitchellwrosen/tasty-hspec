@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to the [Haskell Package Versioning Policy](https://pvp.haskell.org/).
 
+## [1.1.5] - 2018-06-27
+
+### Added
+- `TreatPendingAs` option, for allowing pending tests to be treated as successes
+
 ## [1.1.4] - 2018-3-18
 
 ### Changed

@@ -1,6 +1,6 @@
 cabal-version:       2.0
 name:                tasty-hspec
-version:             1.1.4
+version:             1.1.5
 synopsis:            Hspec support for the Tasty test framework.
 description:         This package provides a Tasty provider for Hspec test
                      suites.
@@ -18,13 +18,14 @@ tested-with:         GHC == 7.4.2,
                      GHC == 7.10.3,
                      GHC == 8.0.2,
                      GHC == 8.2.2,
-                     GHC == 8.4.2
+                     GHC == 8.4.3
 
 extra-source-files:
   .gitignore
   .travis.yml
   cabal.project
   CHANGELOG.md
+  examples/example.hs
   README.md
 
 source-repository head

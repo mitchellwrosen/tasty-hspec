@@ -9,9 +9,12 @@
 --
 
 module Test.Tasty.Hspec
-    ( -- * Documentation
+    ( -- * Tests
       testSpec
     , testSpecs
+    -- * Options
+    , TreatPendingAs(..)
+    -- * Re-exports
     , module Test.Hspec
       -- * Examples
       -- $examples
@@ -100,16 +103,26 @@ instance T.IsTest Item where
   run opts (Item (H.Item _ _ _ ex)) progress = do
     qc_args <- tastyOptionSetToQuickCheckArgs opts
 
-    let params :: H.Params
-        params = H.Params
-          { H.paramsQuickCheckArgs = qc_args
-          , H.paramsSmallCheckDepth = sc_depth
-          }
+    let
+      pending_ :: String -> T.Result
+      pending_ =
+        case T.lookupOption opts of
+          Failure ->
+            T.testFailed
+          Success ->
+            T.testPassed
+
+    let
+      params :: H.Params
+      params = H.Params
+        { H.paramsQuickCheckArgs = qc_args
+        , H.paramsSmallCheckDepth = sc_depth
+        }
 
 #if MIN_VERSION_hspec(2,4,0) && !MIN_VERSION_hspec(2,5,0)
-    either handleUncaughtException hspecResultToTastyResult
+    either handleUncaughtException (hspecResultToTastyResult pending_)
 #else
-    hspecResultToTastyResult
+    hspecResultToTastyResult pending_
 #endif
       <$> ex params ($ ()) hprogress
 
@@ -127,7 +140,8 @@ instance T.IsTest Item where
 
   -- testOptions :: Tagged Item [T.OptionDescription]
   testOptions = return
-    [ T.Option (Proxy :: Proxy TQC.QuickCheckTests)
+    [ T.Option (Proxy :: Proxy TreatPendingAs)
+    , T.Option (Proxy :: Proxy TQC.QuickCheckTests)
     , T.Option (Proxy :: Proxy TQC.QuickCheckReplay)
     , T.Option (Proxy :: Proxy TQC.QuickCheckMaxSize)
     , T.Option (Proxy :: Proxy TQC.QuickCheckMaxRatio)
@@ -153,11 +167,11 @@ tastyOptionSetToQuickCheckArgs opts =
   TQC.QuickCheckMaxRatio max_ratio = T.lookupOption opts
 #endif
 
-hspecResultToTastyResult :: H.Result -> T.Result
+hspecResultToTastyResult :: (String -> T.Result) -> H.Result -> T.Result
 #if MIN_VERSION_hspec(2,5,0)
-hspecResultToTastyResult (H.Result _ result) =
+hspecResultToTastyResult pending_ (H.Result _ result) =
 #else
-hspecResultToTastyResult result =
+hspecResultToTastyResult pending_ result =
 #endif
   case result of
     H.Success ->
@@ -168,7 +182,7 @@ hspecResultToTastyResult result =
 #else
     H.Pending x ->
 #endif
-      handleResultPending x
+      handleResultPending pending_ x
 
 #if MIN_VERSION_hspec(2,4,0)
     H.Failure _ x ->
@@ -179,9 +193,9 @@ hspecResultToTastyResult result =
     H.Fail str -> T.testFailed str
 #endif
 
-handleResultPending :: Maybe String -> T.Result
-handleResultPending x =
-  T.testFailed ("# PENDING: " ++ fromMaybe "No reason given" x)
+handleResultPending :: (String -> T.Result) -> Maybe String -> T.Result
+handleResultPending pending_ x =
+  pending_ ("# PENDING: " ++ fromMaybe "No reason given" x)
 
 -- FailureReason
 --
@@ -208,3 +222,29 @@ handleResultFailure reason =
 handleUncaughtException :: SomeException -> T.Result
 handleUncaughtException ex =
   T.testFailed ("uncaught exception: " ++ H.formatException ex)
+
+-- | How to treat @hspec@ pending tests.
+--
+-- @tasty@ does not have the concept of pending tests, so we must map them to
+-- either successes or failures. By default, they are treated as failures.
+--
+-- Set via the command line flag @--treat-pending-as (success|failure)@.
+data TreatPendingAs
+  = Failure
+  | Success
+
+instance T.IsOption TreatPendingAs where
+  defaultValue =
+    Failure
+
+  parseValue s =
+    case s of
+      "failure" -> Just Failure
+      "success" -> Just Success
+      _         -> Nothing
+
+  optionName =
+    pure "treat-pending-as"
+
+  optionHelp =
+    pure "How to treat pending hspec tests ('failure' or 'success')"
