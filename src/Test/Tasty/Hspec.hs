@@ -22,7 +22,8 @@ module Test.Tasty.Hspec
 
 import Control.Applicative ((<$>))
 import Control.Exception (SomeException)
-import Data.Maybe (catMaybes, fromMaybe)
+import Control.Monad (guard)
+import Data.Maybe (catMaybes, fromMaybe, mapMaybe)
 import Data.Monoid (mconcat)
 import Data.Proxy
 import Data.Typeable (Typeable)
@@ -79,20 +80,35 @@ testSpec name spec = T.testGroup name <$> testSpecs spec
 -- 'H.Spec'. This returns the same tests as 'testSpec' but doesn't create
 -- a <https://hackage.haskell.org/package/tasty tasty> test group from them.
 testSpecs :: H.Spec -> IO [T.TestTree]
-testSpecs spec = map specTreeToTestTree <$> H.runSpecM spec
+testSpecs spec =
+  catMaybes . map specTreeToTestTree <$>
+    -- In hspec 2.6.0, "focus" was introduced. Here we do as hspec does, which
+    -- is pre-process a spec by focusing the whole thing, which is a no-op if
+    -- anything inside is already focused, but otherwise focuses every item.
+    -- Then, when creating a tasty test tree, we just toss the unfocused items.
+    H.runSpecM (doFocus spec)
+  where
+    doFocus :: H.Spec -> H.Spec
+    doFocus =
+#if MIN_VERSION_hspec(2,6,0)
+      H.focus
+#else
+      id
+#endif
 
-specTreeToTestTree :: H.SpecTree () -> T.TestTree
+specTreeToTestTree :: H.SpecTree () -> Maybe T.TestTree
 specTreeToTestTree spec_tree =
   case spec_tree of
     H.Node name spec_trees ->
-      T.testGroup name (map specTreeToTestTree spec_trees)
+      Just (T.testGroup name (mapMaybe specTreeToTestTree spec_trees))
     H.NodeWithCleanup cleanup spec_trees ->
-      T.WithResource (T.ResourceSpec (return ()) cleanup) (const test_tree)
+      T.WithResource (T.ResourceSpec (return ()) cleanup) . const <$> test_tree
      where
-      test_tree :: T.TestTree
+      test_tree :: Maybe T.TestTree
       test_tree = specTreeToTestTree (H.Node "(unnamed)" spec_trees)
-    H.Leaf item ->
-      T.singleTest (H.itemRequirement item) (Item item)
+    H.Leaf item -> do
+      guard (hspecItemIsFocused item)
+      Just (T.singleTest (H.itemRequirement item) (Item item))
 
 newtype Item
   = Item (H.Item ())
@@ -100,7 +116,7 @@ newtype Item
 
 instance T.IsTest Item where
   -- run :: T.OptionSet -> Item -> (T.Progress -> IO ()) -> IO T.Result
-  run opts (Item (H.Item _ _ _ ex)) progress = do
+  run opts (Item item) progress = do
     qc_args <- tastyOptionSetToQuickCheckArgs opts
 
     let
@@ -124,7 +140,7 @@ instance T.IsTest Item where
 #else
     hspecResultToTastyResult pending_
 #endif
-      <$> ex params ($ ()) hprogress
+      <$> hspecItemToExample item params ($ ()) hprogress
 
    where
     sc_depth :: Int
@@ -192,6 +208,27 @@ hspecResultToTastyResult pending_ result =
 #else
     H.Fail str -> T.testFailed str
 #endif
+
+hspecItemIsFocused :: H.Item a -> Bool
+hspecItemIsFocused =
+#if MIN_VERSION_hspec(2,6,0)
+  H.itemIsFocused
+#else
+  const True
+#endif
+
+hspecItemToExample
+  :: H.Item a
+  -> H.Params
+  -> (H.ActionWith a -> IO ())
+  -> H.ProgressCallback
+  -> IO H.Result
+#if MIN_VERSION_hspec(2,6,0)
+hspecItemToExample (H.Item _ _ _ _ ex) = ex
+#else
+hspecItemToExample (H.Item _ _ _ ex) = ex
+#endif
+
 
 handleResultPending :: (String -> T.Result) -> Maybe String -> T.Result
 handleResultPending pending_ x =

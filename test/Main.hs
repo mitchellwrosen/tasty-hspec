@@ -17,3 +17,4 @@ spec = do
   it "failure (reason)" (expectationFailure "foo")
   it "failure (expected but got)" ('a' `shouldBe` 'b')
   it "failure (uncaught exception)" (fail "nope" :: IO ())
+  -- fit "focused" ('a' == 'a')
