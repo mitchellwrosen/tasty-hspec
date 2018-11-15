@@ -1,7 +1,6 @@
 cabal-version:       2.0
 name:                tasty-hspec
 version:             1.1.5.1
-x-revision:          0
 synopsis:            Hspec support for the Tasty test framework.
 description:         This package provides a Tasty provider for Hspec test
                      suites.
