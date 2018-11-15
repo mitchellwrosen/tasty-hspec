@@ -24,7 +24,6 @@ import Control.Applicative ((<$>))
 import Control.Exception (SomeException)
 import Control.Monad (guard)
 import Data.Maybe (catMaybes, fromMaybe, mapMaybe)
-import Data.Monoid (mconcat)
 import Data.Proxy
 import Data.Typeable (Typeable)
 
