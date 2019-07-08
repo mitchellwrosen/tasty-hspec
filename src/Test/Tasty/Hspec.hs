@@ -55,6 +55,18 @@ import Test.Hspec
 --       ])
 -- @
 --
+-- You can treat an 'H.pending'/'H.pendingWith' test as a success instead of a
+-- failure (the default):
+--
+-- @
+-- tests :: TestTree
+-- tests =
+--   localOption TreatPendingAsSuccess $ testGroup "My Hspec TestTree"
+--     $ [ unsafePerformIO (testSpec "My first Hspec test" spec_firstHspecTest)
+--       , ...
+--       ]
+-- @
+--
 -- However, if you don't do any @IO@ during 'Spec' creation, or the @IO@ need
 -- not be performed at any particular time relative to other @IO@ actions, it's
 -- perfectly fine to use 'System.IO.unsafePerformIO'.
