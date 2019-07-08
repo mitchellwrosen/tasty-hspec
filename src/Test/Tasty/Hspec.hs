@@ -6,7 +6,6 @@
 --
 -- However, in a pinch, this module allows you to run an @hspec@ 'H.Spec' as a
 -- @tasty@ 'T.TestTree'.
---
 
 module Test.Tasty.Hspec
     ( -- * Tests
@@ -122,10 +121,8 @@ instance T.IsTest Item where
       pending_ :: String -> T.Result
       pending_ =
         case T.lookupOption opts of
-          Failure ->
-            T.testFailed
-          Success ->
-            T.testPassed
+          TreatPendingAsFailure -> T.testFailed
+          TreatPendingAsSuccess -> T.testPassed
 
     let
       params :: H.Params
@@ -143,43 +140,46 @@ instance T.IsTest Item where
 
    where
     sc_depth :: Int
-    sc_depth = depth
-     where
-      TSC.SmallCheckDepth depth = T.lookupOption opts
+    sc_depth =
+      case T.lookupOption opts of
+        TSC.SmallCheckDepth depth ->
+          depth
 
     hprogress :: H.Progress -> IO ()
-    hprogress (x,y) = progress T.Progress
-      { T.progressText    = ""
-      , T.progressPercent = fromIntegral x / fromIntegral y
-      }
+    hprogress (x,y) =
+      progress T.Progress
+        { T.progressText    = ""
+        , T.progressPercent = fromIntegral x / fromIntegral y
+        }
 
   -- testOptions :: Tagged Item [T.OptionDescription]
-  testOptions = return
-    [ T.Option (Proxy :: Proxy TreatPendingAs)
-    , T.Option (Proxy :: Proxy TQC.QuickCheckTests)
-    , T.Option (Proxy :: Proxy TQC.QuickCheckReplay)
-    , T.Option (Proxy :: Proxy TQC.QuickCheckMaxSize)
-    , T.Option (Proxy :: Proxy TQC.QuickCheckMaxRatio)
-    , T.Option (Proxy :: Proxy TSC.SmallCheckDepth)
-    ]
+  testOptions =
+    return
+      [ T.Option (Proxy :: Proxy TreatPendingAs)
+      , T.Option (Proxy :: Proxy TQC.QuickCheckTests)
+      , T.Option (Proxy :: Proxy TQC.QuickCheckReplay)
+      , T.Option (Proxy :: Proxy TQC.QuickCheckMaxSize)
+      , T.Option (Proxy :: Proxy TQC.QuickCheckMaxRatio)
+      , T.Option (Proxy :: Proxy TSC.SmallCheckDepth)
+      ]
 
 tastyOptionSetToQuickCheckArgs :: T.OptionSet -> IO QC.Args
 tastyOptionSetToQuickCheckArgs opts =
 #if MIN_VERSION_tasty_quickcheck(0,9,1)
   snd <$> TQC.optionSetToArgs opts
 #else
-  return (QC.stdArgs
+  return QC.stdArgs
     { QC.chatty          = False
     , QC.maxDiscardRatio = max_ratio
     , QC.maxSize         = max_size
     , QC.maxSuccess      = num_tests
     , QC.replay          = replay
-    })
- where
-  TQC.QuickCheckTests    num_tests = T.lookupOption opts
-  TQC.QuickCheckReplay   replay    = T.lookupOption opts
-  TQC.QuickCheckMaxSize  max_size  = T.lookupOption opts
-  TQC.QuickCheckMaxRatio max_ratio = T.lookupOption opts
+    }
+  where
+    TQC.QuickCheckTests    num_tests = T.lookupOption opts
+    TQC.QuickCheckReplay   replay    = T.lookupOption opts
+    TQC.QuickCheckMaxSize  max_size  = T.lookupOption opts
+    TQC.QuickCheckMaxRatio max_ratio = T.lookupOption opts
 #endif
 
 hspecResultToTastyResult :: (String -> T.Result) -> H.Result -> T.Result
@@ -266,17 +266,17 @@ handleUncaughtException ex =
 --
 -- Set via the command line flag @--treat-pending-as (success|failure)@.
 data TreatPendingAs
-  = Failure
-  | Success
+  = TreatPendingAsFailure
+  | TreatPendingAsSuccess
 
 instance T.IsOption TreatPendingAs where
   defaultValue =
-    Failure
+    TreatPendingAsFailure
 
   parseValue s =
     case s of
-      "failure" -> Just Failure
-      "success" -> Just Success
+      "failure" -> Just TreatPendingAsFailure
+      "success" -> Just TreatPendingAsSuccess
       _         -> Nothing
 
   optionName =

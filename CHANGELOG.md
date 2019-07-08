@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to the [Haskell Package Versioning Policy](https://pvp.haskell.org/).
 
+## Unreleased
+
+### Changed
+- Rename `Success`, `Failure` to `TreatPendingAsSuccess`, `TreatPendingAsFailure`
+
 ## [1.1.5.1] - 2018-11-15
 
 ### Changed

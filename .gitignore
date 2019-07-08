@@ -1,4 +1,5 @@
 .ghc.environment.*
+.ghcid
 .stack-work/
 dist/
 dist-newstyle/
