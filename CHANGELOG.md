@@ -5,10 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to the [Haskell Package Versioning Policy](https://pvp.haskell.org/).
 
-## Unreleased
+## [1.2.0] - 2020-11-11
 
 ### Changed
-- Rename `Success`, `Failure` to `TreatPendingAsSuccess`, `TreatPendingAsFailure`
+- Rename `Success`/`Failure` to `TreatPendingAsSuccess`/`TreatPendingAsFailure`
+- Support tasty-1.4
 
 ## [1.1.5.1] - 2018-11-15
 
