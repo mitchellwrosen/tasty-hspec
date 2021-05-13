@@ -25,46 +25,24 @@ source-repository head
   location: https://github.com/mitchellwrosen/tasty-hspec.git
 
 library
-  exposed-modules:     Test.Tasty.Hspec
-  hs-source-dirs:      src
-  build-depends:       base
-                            ^>= 4.9
-                         || ^>= 4.10
-                         || ^>= 4.11
-                         || ^>= 4.12
-                         || ^>= 4.13
-                         || ^>= 4.14
-                         || ^>= 4.15
-                     , hspec >= 2 && < 2.9
-                     , hspec-core >= 2 && < 2.9
-                     , QuickCheck
-                            ^>= 2.7
-                         || ^>= 2.8
-                         || ^>= 2.9
-                         || ^>= 2.10
-                         || ^>= 2.11
-                         || ^>= 2.12
-                         || ^>= 2.13
-                         || ^>= 2.14
-                     , tasty
-                            ^>= 0.8
-                         || ^>= 0.9
-                         || ^>= 0.10
-                         || ^>= 0.11
-                         || ^>= 0.12
-                         || ^>= 1.0
-                         || ^>= 1.1
-                         || ^>= 1.2
-                         || ^>= 1.3
-                         || ^>= 1.4
-                     , tasty-smallcheck >= 0.1 && < 0.9
-                     -- 0.9 is missing 'optionSetToArgs'
-                     , tasty-quickcheck >=0.3 && <0.9 || ^>=0.9.1 || ^>= 0.10
+  build-depends:
+    base ^>= 4.9 || ^>= 4.10 || ^>= 4.11 || ^>= 4.12 || ^>= 4.13 || ^>= 4.14 || ^>= 4.15,
+    hspec >= 2.5 && < 2.9,
+    hspec-core >= 2.5 && < 2.9,
+    QuickCheck ^>= 2.7 || ^>= 2.8 || ^>= 2.9 || ^>= 2.10 || ^>= 2.11 || ^>= 2.12 || ^>= 2.13 || ^>= 2.14,
+    tasty ^>= 0.8 || ^>= 0.9 || ^>= 0.10 || ^>= 0.11 || ^>= 0.12 || ^>= 1.0 || ^>= 1.1 || ^>= 1.2 || ^>= 1.3 || ^>= 1.4,
+    tasty-smallcheck >= 0.1 && < 0.9,
+    -- 0.9 is missing 'optionSetToArgs'
+    tasty-quickcheck >=0.3 && <0.9 || ^>=0.9.1 || ^>= 0.10
   if impl(ghc < 7.8)
     build-depends:     tagged >= 0.2
-  other-extensions:    CPP
-                     , DeriveDataTypeable
-  default-language:    Haskell2010
-  ghc-options:         -Wall
+  default-extensions:
+    LambdaCase
+    PatternSynonyms
+  default-language: Haskell2010
+  exposed-modules: Test.Tasty.Hspec
+  ghc-options: -Wall
   if impl(ghc >= 8.0)
-    ghc-options:       -Wcompat
+    ghc-options: -Wcompat
+  hs-source-dirs: src
+  other-modules: Test.Tasty.Hspec.Compat

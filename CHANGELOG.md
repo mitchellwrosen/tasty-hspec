@@ -10,6 +10,10 @@ and this project adheres to the [Haskell Package Versioning Policy](https://pvp.
 ### Changed
 - Support hspec-2.8.0
 
+### Removed
+- Don't re-export `Test.Hspec`
+- Drop support for hspec < 2.5
+
 ## [1.1.6-r1] - 2021-03-13
 
 ### Changed
