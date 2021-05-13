@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to the [Haskell Package Versioning Policy](https://pvp.haskell.org/).
 
+## [1.1.7] - 2021-05-12
+
+### Changed
+- Support hspec-2.8.0
+
 ## [1.1.6-r1] - 2021-03-13
 
 ### Changed

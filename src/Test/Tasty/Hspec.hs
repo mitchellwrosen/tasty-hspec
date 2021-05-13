@@ -11,10 +11,13 @@ module Test.Tasty.Hspec
     ( -- * Tests
       testSpec
     , testSpecs
-    -- * Options
+
+      -- * Options
     , TreatPendingAs(..)
-    -- * Re-exports
+
+      -- * Re-exports
     , module Test.Hspec
+
       -- * Examples
       -- $examples
     ) where
@@ -111,7 +114,11 @@ specTreeToTestTree spec_tree =
   case spec_tree of
     H.Node name spec_trees ->
       Just (T.testGroup name (mapMaybe specTreeToTestTree spec_trees))
+#if MIN_VERSION_hspec(2,8,0)
+    H.NodeWithCleanup _loc cleanup spec_trees ->
+#else
     H.NodeWithCleanup cleanup spec_trees ->
+#endif
       T.WithResource (T.ResourceSpec (return ()) cleanup) . const <$> test_tree
      where
       test_tree :: Maybe T.TestTree
