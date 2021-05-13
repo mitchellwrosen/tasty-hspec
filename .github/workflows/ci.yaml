@@ -7,16 +7,14 @@ on:
 
 jobs:
   build:
-    name: ${{ matrix.os }} / ghc ${{ matrix.ghc }}
+    name: ${{ matrix.os }} / ghc latest
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        ghc: ["8.10.2", "8.8.4", "8.6.5"]
         include:
           - os: macOS-latest
-            ghc: "8.10.2"
 
     steps:
       - uses: actions/checkout@v2
@@ -30,19 +28,15 @@ jobs:
             ~/.cabal/config
             ~/.cabal/packages/hackage.haskell.org/
             ~/.cabal/store
-          key: ${{ runner.os }}-${{ matrix.ghc }}-cabal-${{ hashFiles('cabal.project') }}
-          restore-keys: ${{ runner.os }}-${{ matrix.ghc }}-cabal-
+          key: ${{ runner.os }}-latest-cabal-${{ hashFiles('cabal.project') }}
+          restore-keys: ${{ runner.os }}-latest-cabal-
 
       - uses: actions/cache@v2
         name: Cache build
         with:
           path: dist-newstyle
-          key: ${{ runner.os }}-${{ matrix.ghc }}-dist-${{ github.sha }}
-          restore-keys: ${{ runner.os }}-${{ matrix.ghc }}-dist-
-
-      - name: Add non-system GHC to path
-        if: ${{ runner.os }} == 'ubuntu-latest'
-        run: echo "/opt/ghc/${{ matrix.ghc }}/bin" >> $GITHUB_PATH
+          key: ${{ runner.os }}-latest-dist-${{ github.sha }}
+          restore-keys: ${{ runner.os }}-latest-dist-
 
       - name: cabal update
         if: steps.cache-cabal.outputs.cache-hit != 'true'
