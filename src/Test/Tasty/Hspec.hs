@@ -18,7 +18,6 @@ module Test.Tasty.Hspec
   )
 where
 
-import Control.Applicative ((<$>))
 import Control.Monad (guard)
 import Data.Maybe (catMaybes, fromMaybe, mapMaybe)
 import Data.Proxy
@@ -36,8 +35,8 @@ import qualified Test.Tasty.SmallCheck as TSC
 
 -- $examples
 --
--- The simplest usage of this library involves first creating a 'T.TestTree' in
--- @IO@, then running it with 'T.defaultMain'.
+-- The simplest usage of this library involves first creating a 'T.TestTree' in @IO@, then running it with
+-- 'T.defaultMain'.
 --
 -- @
 -- main = do
@@ -61,7 +60,7 @@ import qualified Test.Tasty.SmallCheck as TSC
 --     ]
 -- @
 --
--- However, if you don't do any @IO@ during 'Spec' creation, or the @IO@ need
+-- If you don't do any @IO@ during 'Spec' creation, or the @IO@ need
 -- not be performed at any particular time relative to other @IO@ actions, it's
 -- perfectly fine to use 'System.IO.unsafePerformIO'.
 --
@@ -75,14 +74,14 @@ import qualified Test.Tasty.SmallCheck as TSC
 -- @
 
 -- | Create a <https://hackage.haskell.org/package/tasty tasty> 'T.TestTree' from an
--- <https://hackage.haskell.org/package/hspec Hspec> 'H.Spec'.
+-- <https://hackage.haskell.org/package/hspec hspec> 'H.Spec'.
 testSpec :: T.TestName -> H.Spec -> IO T.TestTree
 testSpec name spec = do
   trees <- testSpecs spec
   pure (T.testGroup name trees)
 
 -- | Create a list of <https://hackage.haskell.org/package/tasty tasty> 'T.TestTree' from an
--- <https://hackage.haskell.org/package/hspec Hspec> 'H.Spec'. This returns the same tests as 'testSpec'
+-- <https://hackage.haskell.org/package/hspec hspec> 'H.Spec'. This returns the same tests as 'testSpec'
 -- but doesn't create a <https://hackage.haskell.org/package/tasty tasty> test group from them.
 testSpecs :: H.Spec -> IO [T.TestTree]
 testSpecs spec = do
@@ -165,7 +164,8 @@ instance T.IsTest Item where
 --
 -- Set via the command line flag @--treat-pending-as (success|failure)@.
 data TreatPendingAs
-  = TreatPendingAsFailure
+  = -- | Default.
+    TreatPendingAsFailure
   | TreatPendingAsSuccess
 
 instance T.IsOption TreatPendingAs where
