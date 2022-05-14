@@ -13,9 +13,10 @@ maintainer:          mitchellwrosen@gmail.com
 category:            Testing
 build-type:          Simple
 
+tested-with: GHC == 8.10.7, GHC == 9.0.2, GHC == 9.2.2
+
 extra-source-files:
   .gitignore
-  cabal.project
   CHANGELOG.md
   examples/example.hs
   README.md
