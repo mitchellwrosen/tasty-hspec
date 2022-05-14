@@ -33,7 +33,7 @@ pattern Leaf item <-
   Hspec.Leaf item
 
 pattern Node :: String -> [Hspec.Tree c a] -> Hspec.Tree c a
-pattern Node name trees <-
+pattern Node name trees =
   Hspec.Node name trees
 
 pattern NodeWithCleanup :: c -> [Hspec.Tree c a] -> Hspec.Tree c a

@@ -22,15 +22,15 @@ import Control.Monad (guard)
 import Data.Maybe (catMaybes, fromMaybe, mapMaybe)
 import Data.Proxy
 import Data.Typeable (Typeable)
-import qualified Test.Hspec as H
-import qualified Test.Hspec.Core.Formatters as H
-import qualified Test.Hspec.Core.Spec as H
-import qualified Test.Tasty as T
+import qualified Test.Hspec as Hspec
+import qualified Test.Hspec.Core.Formatters as Hspec.Core.Formatters
+import qualified Test.Hspec.Core.Spec as Hspec.Core.Spec
+import qualified Test.Tasty as Tasty
 import Test.Tasty.Hspec.Compat
-import qualified Test.Tasty.Options as T
-import qualified Test.Tasty.Providers as T
+import qualified Test.Tasty.Options as Tasty.Options
+import qualified Test.Tasty.Providers as Tasty.Providers
 import qualified Test.Tasty.QuickCheck as TQC
-import qualified Test.Tasty.Runners as T
+import qualified Test.Tasty.Runners as Tasty.Runners
 import qualified Test.Tasty.SmallCheck as TSC
 
 -- $examples
@@ -75,15 +75,15 @@ import qualified Test.Tasty.SmallCheck as TSC
 
 -- | Create a <https://hackage.haskell.org/package/tasty tasty> 'T.TestTree' from an
 -- <https://hackage.haskell.org/package/hspec hspec> 'H.Spec'.
-testSpec :: T.TestName -> H.Spec -> IO T.TestTree
+testSpec :: Tasty.TestName -> Hspec.Spec -> IO Tasty.TestTree
 testSpec name spec = do
   trees <- testSpecs spec
-  pure (T.testGroup name trees)
+  pure (Tasty.testGroup name trees)
 
 -- | Create a list of <https://hackage.haskell.org/package/tasty tasty> 'T.TestTree' from an
 -- <https://hackage.haskell.org/package/hspec hspec> 'H.Spec'. This returns the same tests as 'testSpec'
 -- but doesn't create a <https://hackage.haskell.org/package/tasty tasty> test group from them.
-testSpecs :: H.Spec -> IO [T.TestTree]
+testSpecs :: Hspec.Spec -> IO [Tasty.TestTree]
 testSpecs spec = do
   -- Here we do as hspec does, which is pre-process a spec by focusing the whole thing, which is a no-op if
   -- anything inside is already focused, but otherwise focuses every item. Then, when creating a tasty test tree,
@@ -91,66 +91,67 @@ testSpecs spec = do
   trees <- runSpecM (focus spec)
   pure (mapMaybe specTreeToTestTree trees)
 
-specTreeToTestTree :: H.SpecTree () -> Maybe T.TestTree
+specTreeToTestTree :: Hspec.Core.Spec.SpecTree () -> Maybe Tasty.TestTree
 specTreeToTestTree = \case
-  Node name trees -> pure (T.testGroup name (mapMaybe specTreeToTestTree trees))
+  Node name trees -> pure (Tasty.testGroup name (mapMaybe specTreeToTestTree trees))
   NodeWithCleanup cleanup trees -> do
-    tree <- specTreeToTestTree (H.Node "(unnamed)" trees)
-    pure (T.WithResource (T.ResourceSpec (pure ()) (twiddleCleanup cleanup)) (const tree))
+    tree <- specTreeToTestTree (Node "(unnamed)" trees)
+    pure (Tasty.Runners.WithResource (Tasty.Runners.ResourceSpec (pure ()) (twiddleCleanup cleanup)) (const tree))
   Leaf item -> do
     guard (itemIsFocused item)
-    pure (T.singleTest (H.itemRequirement item) (Item item))
+    pure (Tasty.Providers.singleTest (Hspec.Core.Spec.itemRequirement item) (Item item))
 
 newtype Item
-  = Item (H.Item ())
+  = Item (Hspec.Core.Spec.Item ())
   deriving (Typeable)
 
-instance T.IsTest Item where
+instance Tasty.Providers.IsTest Item where
   run opts (Item item) progress = do
     qcArgs <- optionSetToQuickCheckArgs opts
     let params =
-          H.Params
-            { H.paramsQuickCheckArgs = qcArgs,
-              H.paramsSmallCheckDepth = optionSetToSmallCheckDepth opts
+          Hspec.Core.Spec.Params
+            { Hspec.Core.Spec.paramsQuickCheckArgs = qcArgs,
+              Hspec.Core.Spec.paramsSmallCheckDepth = optionSetToSmallCheckDepth opts
             }
-    H.Result _ result <- itemExample item params ($ ()) progress'
+    Hspec.Core.Spec.Result _ result <- itemExample item params ($ ()) progress'
     pure
       ( case result of
-          H.Success -> T.testPassed ""
-          H.Pending _ reason ->
-            case T.lookupOption opts of
-              TreatPendingAsFailure -> T.testFailed reason'
-              TreatPendingAsSuccess -> T.testPassed reason'
+          Hspec.Core.Spec.Success -> Tasty.Providers.testPassed ""
+          Hspec.Core.Spec.Pending _ reason ->
+            case Tasty.Options.lookupOption opts of
+              TreatPendingAsFailure -> Tasty.Providers.testFailed reason'
+              TreatPendingAsSuccess -> Tasty.Providers.testPassed reason'
             where
               reason' = "# PENDING: " ++ fromMaybe "No reason given" reason
-          H.Failure _ reason ->
+          Hspec.Core.Spec.Failure _ reason ->
             case reason of
-              H.NoReason -> T.testFailed ""
-              H.Reason x -> T.testFailed x
-              H.ExpectedButGot preface expected actual ->
-                T.testFailed . unlines . catMaybes $
+              Hspec.Core.Spec.NoReason -> Tasty.Providers.testFailed ""
+              Hspec.Core.Spec.Reason x -> Tasty.Providers.testFailed x
+              Hspec.Core.Spec.ExpectedButGot preface expected actual ->
+                Tasty.Providers.testFailed . unlines . catMaybes $
                   [ preface,
                     Just ("expected: " ++ expected),
                     Just (" but got: " ++ actual)
                   ]
-              H.Error _ exception -> T.testFailed ("uncaught exception: " ++ H.formatException exception)
+              Hspec.Core.Spec.Error _ exception ->
+                Tasty.Providers.testFailed ("uncaught exception: " ++ Hspec.Core.Formatters.formatException exception)
       )
     where
       progress' (x, y) =
         progress
-          T.Progress
-            { T.progressText = "",
-              T.progressPercent = fromIntegral x / fromIntegral y
+          Tasty.Runners.Progress
+            { Tasty.Runners.progressText = "",
+              Tasty.Runners.progressPercent = fromIntegral x / fromIntegral y
             }
 
   testOptions =
     pure
-      [ T.Option (Proxy :: Proxy TreatPendingAs),
-        T.Option (Proxy :: Proxy TQC.QuickCheckTests),
-        T.Option (Proxy :: Proxy TQC.QuickCheckReplay),
-        T.Option (Proxy :: Proxy TQC.QuickCheckMaxSize),
-        T.Option (Proxy :: Proxy TQC.QuickCheckMaxRatio),
-        T.Option (Proxy :: Proxy TSC.SmallCheckDepth)
+      [ Tasty.Options.Option (Proxy :: Proxy TreatPendingAs),
+        Tasty.Options.Option (Proxy :: Proxy TQC.QuickCheckTests),
+        Tasty.Options.Option (Proxy :: Proxy TQC.QuickCheckReplay),
+        Tasty.Options.Option (Proxy :: Proxy TQC.QuickCheckMaxSize),
+        Tasty.Options.Option (Proxy :: Proxy TQC.QuickCheckMaxRatio),
+        Tasty.Options.Option (Proxy :: Proxy TSC.SmallCheckDepth)
       ]
 
 -- | How to treat @hspec@ pending tests.
@@ -164,7 +165,7 @@ data TreatPendingAs
     TreatPendingAsFailure
   | TreatPendingAsSuccess
 
-instance T.IsOption TreatPendingAs where
+instance Tasty.Options.IsOption TreatPendingAs where
   defaultValue =
     TreatPendingAsFailure
 
