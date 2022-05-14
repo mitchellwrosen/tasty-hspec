@@ -88,7 +88,7 @@ testSpecs spec = do
   -- Here we do as hspec does, which is pre-process a spec by focusing the whole thing, which is a no-op if
   -- anything inside is already focused, but otherwise focuses every item. Then, when creating a tasty test tree,
   -- we just toss the unfocused items.
-  trees <- H.runSpecM (focus spec)
+  trees <- runSpecM (focus spec)
   pure (mapMaybe specTreeToTestTree trees)
 
 specTreeToTestTree :: H.SpecTree () -> Maybe T.TestTree
@@ -96,7 +96,7 @@ specTreeToTestTree = \case
   Node name trees -> pure (T.testGroup name (mapMaybe specTreeToTestTree trees))
   NodeWithCleanup cleanup trees -> do
     tree <- specTreeToTestTree (H.Node "(unnamed)" trees)
-    pure (T.WithResource (T.ResourceSpec (return ()) cleanup) (const tree))
+    pure (T.WithResource (T.ResourceSpec (pure ()) (twiddleCleanup cleanup)) (const tree))
   Leaf item -> do
     guard (itemIsFocused item)
     pure (T.singleTest (H.itemRequirement item) (Item item))
@@ -108,7 +108,12 @@ newtype Item
 instance T.IsTest Item where
   run opts (Item item) progress = do
     qcArgs <- optionSetToQuickCheckArgs opts
-    H.Result _ result <- itemExample item (params qcArgs) ($ ()) progress'
+    let params =
+          H.Params
+            { H.paramsQuickCheckArgs = qcArgs,
+              H.paramsSmallCheckDepth = optionSetToSmallCheckDepth opts
+            }
+    H.Result _ result <- itemExample item params ($ ()) progress'
     pure
       ( case result of
           H.Success -> T.testPassed ""
@@ -131,15 +136,6 @@ instance T.IsTest Item where
               H.Error _ exception -> T.testFailed ("uncaught exception: " ++ H.formatException exception)
       )
     where
-      params qcArgs =
-        H.Params
-          { H.paramsQuickCheckArgs = qcArgs,
-            H.paramsSmallCheckDepth =
-              case T.lookupOption opts of
-                TSC.SmallCheckDepth depth ->
-                  depth
-          }
-
       progress' (x, y) =
         progress
           T.Progress

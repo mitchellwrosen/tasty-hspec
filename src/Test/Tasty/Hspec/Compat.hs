@@ -5,6 +5,9 @@ module Test.Tasty.Hspec.Compat
     itemIsFocused,
     focus,
     optionSetToQuickCheckArgs,
+    optionSetToSmallCheckDepth,
+    runSpecM,
+    twiddleCleanup,
 
     pattern Leaf,
     pattern Node,
@@ -17,6 +20,11 @@ import qualified Test.Hspec.Core.Spec as Hspec
 import qualified Test.QuickCheck as QuickCheck
 import qualified Test.Tasty.Options as Tasty
 import qualified Test.Tasty.QuickCheck as Tasty.QuickCheck
+import qualified Test.Tasty.SmallCheck as Tasty.SmallCheck
+#if MIN_VERSION_hspec_core(2,10,0)
+import Data.Monoid (Endo)
+import qualified Test.Hspec.Core.Runner as Hspec.Core.Runner
+#endif
 
 {-# COMPLETE Leaf, Node, NodeWithCleanup #-}
 
@@ -81,3 +89,47 @@ optionSetToQuickCheckArgs opts =
     Tasty.QuickCheck.QuickCheckMaxRatio max_ratio = T.lookupOption opts
 #endif
 
+-- In hspec-core-2.10.0, Int changed to Maybe Int
+optionSetToSmallCheckDepth ::
+  Tasty.OptionSet ->
+#if MIN_VERSION_hspec_core(2,10,0)
+  Maybe
+#endif
+  Int
+optionSetToSmallCheckDepth opts =
+  case Tasty.lookupOption opts of
+    Tasty.SmallCheck.SmallCheckDepth depth ->
+#if MIN_VERSION_hspec_core(2,10,0)
+      Just
+#endif
+      depth
+
+-- In hspec-core-2.10.0, runSpecM started returning an Endo Config, which we don't need. (Right? :shrug:)
+runSpecM :: Hspec.SpecWith a -> IO [Hspec.SpecTree a]
+runSpecM spec = do
+#if MIN_VERSION_hspec_core(2,10,0)
+  (_ :: Endo Hspec.Core.Runner.Config, trees) <- Hspec.runSpecM spec
+  pure trees
+#else
+  Hspec.runSpecM spec
+#endif
+
+-- In hspec-core-2.10.0, the spec SpecTree type alias changed from
+--
+--   type SpecTree a = Tree (a -> IO ()) (Item a)
+--
+-- to
+--
+--   type SpecTree a = Tree (IO ()) (Item a)
+--
+-- So we have a function that "twiddles" the cleanup action (at monomorphic type `SpecTree ()`), which always returns a
+-- value of type `() -> IO ()`
+#if MIN_VERSION_hspec_core(2,10,0)
+twiddleCleanup :: IO () -> () -> IO ()
+twiddleCleanup =
+  const
+#else
+twiddleCleanup :: (() -> IO ()) -> () -> IO ()
+twiddleCleanup =
+  id
+#endif
