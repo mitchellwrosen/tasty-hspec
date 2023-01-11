@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.2.0.3] - 2023-01-10
+## [1.2.0.3] - 2023-01-11
 
 - Drop support for `hspec < 2.10`, `hspec-core < 2.10`, `tasty < 1.3`, and `tasty-quickcheck < 0.9.1`. This was done to
   eliminate CPP and reduce maintenance burden. Moving forward, this library will opt to tighten compatibility bounds
