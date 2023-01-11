@@ -32,6 +32,7 @@ import qualified Test.Tasty.Providers as Tasty.Providers
 import qualified Test.Tasty.QuickCheck as TQC
 import qualified Test.Tasty.Runners as Tasty.Runners
 import qualified Test.Tasty.SmallCheck as TSC
+import qualified Test.Tasty.SmallCheck as Tasty.SmallCheck
 
 -- $examples
 --
@@ -88,7 +89,7 @@ testSpecs spec = do
   -- Here we do as hspec does, which is pre-process a spec by focusing the whole thing, which is a no-op if
   -- anything inside is already focused, but otherwise focuses every item. Then, when creating a tasty test tree,
   -- we just toss the unfocused items.
-  trees <- runSpecM (Hspec.focus spec)
+  (_configBuilder, trees) <- Hspec.Core.Spec.runSpecM (Hspec.focus spec)
   pure (mapMaybe specTreeToTestTree trees)
 
 specTreeToTestTree :: Hspec.Core.Spec.SpecTree () -> Maybe Tasty.TestTree
@@ -96,7 +97,7 @@ specTreeToTestTree = \case
   Hspec.Core.Spec.Node name trees -> pure (Tasty.testGroup name (mapMaybe specTreeToTestTree trees))
   Hspec.Core.Spec.NodeWithCleanup _loc cleanup trees -> do
     tree <- specTreeToTestTree (Hspec.Core.Spec.Node "(unnamed)" trees)
-    pure (Tasty.Runners.WithResource (Tasty.Runners.ResourceSpec (pure ()) (twiddleCleanup cleanup)) (const tree))
+    pure (Tasty.Runners.WithResource (Tasty.Runners.ResourceSpec (pure ()) (const cleanup)) (const tree))
   Hspec.Core.Spec.Leaf item -> do
     guard (Hspec.Core.Spec.itemIsFocused item)
     pure (Tasty.Providers.singleTest (Hspec.Core.Spec.itemRequirement item) (Item item))
@@ -111,7 +112,9 @@ instance Tasty.Providers.IsTest Item where
     let params =
           Hspec.Core.Spec.Params
             { Hspec.Core.Spec.paramsQuickCheckArgs = qcArgs,
-              Hspec.Core.Spec.paramsSmallCheckDepth = optionSetToSmallCheckDepth opts
+              Hspec.Core.Spec.paramsSmallCheckDepth =
+                case Tasty.Options.lookupOption opts of
+                  Tasty.SmallCheck.SmallCheckDepth depth -> Just depth
             }
     Hspec.Core.Spec.Result _ result <- Hspec.Core.Spec.itemExample item params ($ ()) progress'
     pure
