@@ -88,7 +88,7 @@ testSpecs spec = do
   -- Here we do as hspec does, which is pre-process a spec by focusing the whole thing, which is a no-op if
   -- anything inside is already focused, but otherwise focuses every item. Then, when creating a tasty test tree,
   -- we just toss the unfocused items.
-  trees <- runSpecM (focus spec)
+  trees <- runSpecM (Hspec.focus spec)
   pure (mapMaybe specTreeToTestTree trees)
 
 specTreeToTestTree :: Hspec.Core.Spec.SpecTree () -> Maybe Tasty.TestTree
@@ -98,7 +98,7 @@ specTreeToTestTree = \case
     tree <- specTreeToTestTree (Node "(unnamed)" trees)
     pure (Tasty.Runners.WithResource (Tasty.Runners.ResourceSpec (pure ()) (twiddleCleanup cleanup)) (const tree))
   Leaf item -> do
-    guard (itemIsFocused item)
+    guard (Hspec.Core.Spec.itemIsFocused item)
     pure (Tasty.Providers.singleTest (Hspec.Core.Spec.itemRequirement item) (Item item))
 
 newtype Item
@@ -113,7 +113,7 @@ instance Tasty.Providers.IsTest Item where
             { Hspec.Core.Spec.paramsQuickCheckArgs = qcArgs,
               Hspec.Core.Spec.paramsSmallCheckDepth = optionSetToSmallCheckDepth opts
             }
-    Hspec.Core.Spec.Result _ result <- itemExample item params ($ ()) progress'
+    Hspec.Core.Spec.Result _ result <- Hspec.Core.Spec.itemExample item params ($ ()) progress'
     pure
       ( case result of
           Hspec.Core.Spec.Success -> Tasty.Providers.testPassed ""

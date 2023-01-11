@@ -1,10 +1,7 @@
 {-# LANGUAGE CPP #-}
 
 module Test.Tasty.Hspec.Compat
-  ( itemExample,
-    itemIsFocused,
-    focus,
-    optionSetToQuickCheckArgs,
+  ( optionSetToQuickCheckArgs,
     optionSetToSmallCheckDepth,
     runSpecM,
     twiddleCleanup,
@@ -42,31 +39,6 @@ pattern NodeWithCleanup cleanup trees <-
   Hspec.NodeWithCleanup _loc cleanup trees
 #else
   Hspec.NodeWithCleanup cleanup trees
-#endif
-
-itemExample :: Hspec.Item a -> Hspec.Params -> (Hspec.ActionWith a -> IO ()) -> Hspec.ProgressCallback -> IO Hspec.Result
-itemExample item =
-  case item of
-#if MIN_VERSION_hspec(2,6,0)
-    Hspec.Item _ _ _ _ example -> example
-#else
-    Hspec.Item _ _ _ example -> example
-#endif
-
-itemIsFocused :: Hspec.Item a -> Bool
-itemIsFocused =
-#if MIN_VERSION_hspec(2,6,0)
-  Hspec.itemIsFocused
-#else
-  const True
-#endif
-
-focus :: Hspec.Spec -> Hspec.Spec
-focus =
-#if MIN_VERSION_hspec(2,6,0)
-  Hspec.focus
-#else
-  id
 #endif
 
 optionSetToQuickCheckArgs :: Tasty.OptionSet -> IO QuickCheck.Args
