@@ -5,10 +5,6 @@ module Test.Tasty.Hspec.Compat
     optionSetToSmallCheckDepth,
     runSpecM,
     twiddleCleanup,
-
-    pattern Leaf,
-    pattern Node,
-    pattern NodeWithCleanup,
   )
 where
 
@@ -21,24 +17,6 @@ import qualified Test.Tasty.SmallCheck as Tasty.SmallCheck
 #if MIN_VERSION_hspec_core(2,10,0)
 import Data.Monoid (Endo)
 import qualified Test.Hspec.Core.Runner as Hspec.Core.Runner
-#endif
-
-{-# COMPLETE Leaf, Node, NodeWithCleanup #-}
-
-pattern Leaf :: a -> Hspec.Tree c a
-pattern Leaf item <-
-  Hspec.Leaf item
-
-pattern Node :: String -> [Hspec.Tree c a] -> Hspec.Tree c a
-pattern Node name trees =
-  Hspec.Node name trees
-
-pattern NodeWithCleanup :: c -> [Hspec.Tree c a] -> Hspec.Tree c a
-pattern NodeWithCleanup cleanup trees <-
-#if MIN_VERSION_hspec(2,8,0)
-  Hspec.NodeWithCleanup _loc cleanup trees
-#else
-  Hspec.NodeWithCleanup cleanup trees
 #endif
 
 optionSetToQuickCheckArgs :: Tasty.OptionSet -> IO QuickCheck.Args

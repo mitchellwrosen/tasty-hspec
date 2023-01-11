@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Remove support for `hspec-2.5`
+- Remove support for `hspec < 2.8`
 
 ## [1.2.0.2] - 2023-01-10
 

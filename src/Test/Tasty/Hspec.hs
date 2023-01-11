@@ -93,11 +93,11 @@ testSpecs spec = do
 
 specTreeToTestTree :: Hspec.Core.Spec.SpecTree () -> Maybe Tasty.TestTree
 specTreeToTestTree = \case
-  Node name trees -> pure (Tasty.testGroup name (mapMaybe specTreeToTestTree trees))
-  NodeWithCleanup cleanup trees -> do
-    tree <- specTreeToTestTree (Node "(unnamed)" trees)
+  Hspec.Core.Spec.Node name trees -> pure (Tasty.testGroup name (mapMaybe specTreeToTestTree trees))
+  Hspec.Core.Spec.NodeWithCleanup _loc cleanup trees -> do
+    tree <- specTreeToTestTree (Hspec.Core.Spec.Node "(unnamed)" trees)
     pure (Tasty.Runners.WithResource (Tasty.Runners.ResourceSpec (pure ()) (twiddleCleanup cleanup)) (const tree))
-  Leaf item -> do
+  Hspec.Core.Spec.Leaf item -> do
     guard (Hspec.Core.Spec.itemIsFocused item)
     pure (Tasty.Providers.singleTest (Hspec.Core.Spec.itemRequirement item) (Item item))
 
