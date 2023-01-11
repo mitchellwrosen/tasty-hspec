@@ -83,10 +83,10 @@ optionSetToQuickCheckArgs opts =
         QuickCheck.replay = replay
       }
   where
-    Tasty.QuickCheck.QuickCheckTests num_tests = T.lookupOption opts
-    Tasty.QuickCheck.QuickCheckReplay replay = T.lookupOption opts
-    Tasty.QuickCheck.QuickCheckMaxSize max_size = T.lookupOption opts
-    Tasty.QuickCheck.QuickCheckMaxRatio max_ratio = T.lookupOption opts
+    Tasty.QuickCheck.QuickCheckTests num_tests = Tasty.lookupOption opts
+    Tasty.QuickCheck.QuickCheckReplay replay = Tasty.lookupOption opts
+    Tasty.QuickCheck.QuickCheckMaxSize max_size = Tasty.lookupOption opts
+    Tasty.QuickCheck.QuickCheckMaxRatio max_ratio = Tasty.lookupOption opts
 #endif
 
 -- In hspec-core-2.10.0, Int changed to Maybe Int

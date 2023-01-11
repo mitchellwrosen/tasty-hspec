@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.2.0.2] - 2023-01-10
+
+- Fix build when `tasty-quickcheck < 0.9.1`
+
 ## [1.2.0.1] - 2022-05-14
 
 - Support hspec-2.10.0
