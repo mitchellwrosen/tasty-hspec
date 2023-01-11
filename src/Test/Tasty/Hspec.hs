@@ -1,5 +1,3 @@
-{-# LANGUAGE CPP #-}
-
 -- | @hspec@ and @tasty@ serve similar purposes; consider using one or the
 -- other.
 --
@@ -184,7 +182,5 @@ instance Tasty.Options.IsOption TreatPendingAs where
   optionHelp =
     pure "How to treat pending hspec tests ('failure' or 'success')"
 
-#if MIN_VERSION_tasty(1,3,0)
   showDefaultValue _ =
     Just "failure"
-#endif

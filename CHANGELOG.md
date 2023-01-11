@@ -2,9 +2,9 @@
 
 ## Unreleased
 
-- Drop support for `hspec < 2.10`
-- Drop support for `hspec-core < 2.10`
-- Drop support for `tasty-quickcheck < 0.9.1`
+- Drop support for `hspec < 2.10`, `hspec-core < 2.10`, `tasty < 1.3`, and `tasty-quickcheck < 0.9.1`. This was done to
+  eliminate CPP and reduce maintenance burden. Moving forward, this library will opt to tighten compatibility bounds
+  when dependencies make breaking changes, rather than reintroduce CPP.
 
 ## [1.2.0.2] - 2023-01-10
 
