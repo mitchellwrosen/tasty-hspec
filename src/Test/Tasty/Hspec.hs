@@ -26,12 +26,10 @@ import qualified Test.Hspec as Hspec
 import qualified Test.Hspec.Core.Formatters as Hspec.Core.Formatters
 import qualified Test.Hspec.Core.Spec as Hspec.Core.Spec
 import qualified Test.Tasty as Tasty
-import Test.Tasty.Hspec.Compat
 import qualified Test.Tasty.Options as Tasty.Options
 import qualified Test.Tasty.Providers as Tasty.Providers
-import qualified Test.Tasty.QuickCheck as TQC
+import qualified Test.Tasty.QuickCheck as Tasty.QuickCheck
 import qualified Test.Tasty.Runners as Tasty.Runners
-import qualified Test.Tasty.SmallCheck as TSC
 import qualified Test.Tasty.SmallCheck as Tasty.SmallCheck
 
 -- $examples
@@ -108,7 +106,10 @@ newtype Item
 
 instance Tasty.Providers.IsTest Item where
   run opts (Item item) progress = do
-    qcArgs <- optionSetToQuickCheckArgs opts
+    (_, qcArgs) <- Tasty.QuickCheck.optionSetToArgs opts
+    -- optionSetToQuickCheckArgs :: Tasty.OptionSet -> IO QuickCheck.Args
+    -- optionSetToQuickCheckArgs opts =
+    --   snd <$> Tasty.QuickCheck.optionSetToArgs opts
     let params =
           Hspec.Core.Spec.Params
             { Hspec.Core.Spec.paramsQuickCheckArgs = qcArgs,
@@ -150,11 +151,11 @@ instance Tasty.Providers.IsTest Item where
   testOptions =
     pure
       [ Tasty.Options.Option (Proxy :: Proxy TreatPendingAs),
-        Tasty.Options.Option (Proxy :: Proxy TQC.QuickCheckTests),
-        Tasty.Options.Option (Proxy :: Proxy TQC.QuickCheckReplay),
-        Tasty.Options.Option (Proxy :: Proxy TQC.QuickCheckMaxSize),
-        Tasty.Options.Option (Proxy :: Proxy TQC.QuickCheckMaxRatio),
-        Tasty.Options.Option (Proxy :: Proxy TSC.SmallCheckDepth)
+        Tasty.Options.Option (Proxy :: Proxy Tasty.QuickCheck.QuickCheckTests),
+        Tasty.Options.Option (Proxy :: Proxy Tasty.QuickCheck.QuickCheckReplay),
+        Tasty.Options.Option (Proxy :: Proxy Tasty.QuickCheck.QuickCheckMaxSize),
+        Tasty.Options.Option (Proxy :: Proxy Tasty.QuickCheck.QuickCheckMaxRatio),
+        Tasty.Options.Option (Proxy :: Proxy Tasty.SmallCheck.SmallCheckDepth)
       ]
 
 -- | How to treat @hspec@ pending tests.

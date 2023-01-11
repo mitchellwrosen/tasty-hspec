@@ -2,8 +2,9 @@
 
 ## Unreleased
 
-- Remove support for `hspec < 2.10`
-- Remove support for `hspec-core < 2.10`
+- Drop support for `hspec < 2.10`
+- Drop support for `hspec-core < 2.10`
+- Drop support for `tasty-quickcheck < 0.9.1`
 
 ## [1.2.0.2] - 2023-01-10
 
