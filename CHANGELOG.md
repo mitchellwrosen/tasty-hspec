@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.2.0.4] - 2023-04-25
+
+- Add support for `hspec-2.11`
+- Drop support for `hspec-2.10`
+- Drop support for GHC < 8.4
+
 ## [1.2.0.3] - 2023-01-11
 
 - Drop support for `hspec < 2.10`, `hspec-core < 2.10`, `tasty < 1.3`, and `tasty-quickcheck < 0.9.1`. This was done to

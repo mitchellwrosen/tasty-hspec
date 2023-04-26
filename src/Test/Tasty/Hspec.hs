@@ -21,7 +21,7 @@ import Data.Maybe (catMaybes, fromMaybe, mapMaybe)
 import Data.Proxy
 import Data.Typeable (Typeable)
 import qualified Test.Hspec as Hspec
-import qualified Test.Hspec.Core.Formatters as Hspec.Core.Formatters
+import qualified Test.Hspec.Api.Formatters.V1 as Hspec.Api.Formatters.V1
 import qualified Test.Hspec.Core.Spec as Hspec.Core.Spec
 import qualified Test.Tasty as Tasty
 import qualified Test.Tasty.Options as Tasty.Options
@@ -127,6 +127,7 @@ instance Tasty.Providers.IsTest Item where
               reason' = "# PENDING: " ++ fromMaybe "No reason given" reason
           Hspec.Core.Spec.Failure _ reason ->
             case reason of
+              Hspec.Core.Spec.ColorizedReason x -> Tasty.Providers.testFailed x
               Hspec.Core.Spec.NoReason -> Tasty.Providers.testFailed ""
               Hspec.Core.Spec.Reason x -> Tasty.Providers.testFailed x
               Hspec.Core.Spec.ExpectedButGot preface expected actual ->
@@ -136,7 +137,7 @@ instance Tasty.Providers.IsTest Item where
                     Just (" but got: " ++ actual)
                   ]
               Hspec.Core.Spec.Error _ exception ->
-                Tasty.Providers.testFailed ("uncaught exception: " ++ Hspec.Core.Formatters.formatException exception)
+                Tasty.Providers.testFailed ("uncaught exception: " ++ Hspec.Api.Formatters.V1.formatException exception)
       )
     where
       progress' (x, y) =
