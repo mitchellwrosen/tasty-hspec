@@ -1,8 +1,8 @@
--- | @hspec@ and @tasty@ serve similar purposes; consider using one or the
--- other.
+-- | @<https://hackage.haskell.org/package/hspec hspec>@ and @<https://hackage.haskell.org/package/tasty tasty>@ serve
+-- similar purposes; consider using one or the other.
 --
--- However, in a pinch, this module allows you to run an @hspec@ 'H.Spec' as a
--- @tasty@ 'T.TestTree'.
+-- However, in a pinch, this module allows you to run an @<https://hackage.haskell.org/package/hspec hspec>@
+-- 'Hspec.Spec' as a @<https://hackage.haskell.org/package/tasty tasty>@ 'Tasty.TestTree'.
 module Test.Tasty.Hspec
   ( -- * Tests
     testSpec,
@@ -32,54 +32,42 @@ import qualified Test.Tasty.SmallCheck as Tasty.SmallCheck
 
 -- $examples
 --
--- The simplest usage of this library involves first creating a 'T.TestTree' in @IO@, then running it with
--- 'T.defaultMain'.
+-- The simplest usage of this library involves first creating a 'Tasty.TestTree' in @IO@, then running it with
+-- 'Tasty.defaultMain'.
 --
 -- @
 -- main = do
 --   spec <- 'testSpec' "spec" mySpec
---   'T.defaultMain'
---     ('T.testGroup' "tests"
---       [ spec
---       , ...
---       ])
+--   'Tasty.defaultMain' ('Tasty.testGroup' "tests" [spec])
 -- @
 --
--- You can treat an 'H.pending'/'H.pendingWith' test as a success instead of a
--- failure (the default):
+-- You can treat an 'Hspec.pending'/'Hspec.pendingWith' test as a success instead of a failure (the default):
 --
 -- @
--- tests :: TestTree
--- tests =
---   localOption TreatPendingAsSuccess $ testGroup "My Hspec TestTree"
---     [ unsafePerformIO (testSpec "My first Hspec test" spec_firstHspecTest)
---     , ...
---     ]
+-- main = do
+--   spec <- 'testSpec' "spec" mySpec
+--   'Tasty.defaultMain' ('Tasty.localOption' 'TreatPendingAsSuccess' ('Tasty.testGroup' "tests" [spec]))
 -- @
 --
--- If you don't do any @IO@ during 'Spec' creation, or the @IO@ need
+-- If you don't do any @IO@ during 'Hspec.Spec' creation, or the @IO@ need
 -- not be performed at any particular time relative to other @IO@ actions, it's
 -- perfectly fine to use 'System.IO.unsafePerformIO'.
 --
 -- @
 -- main = do
---   'T.defaultMain'
---     ('T.testGroup' "tests"
---       [ 'System.IO.unsafePerformIO' ('testSpec' "spec" mySpec)
---       , ...
---       ])
+--   'Tasty.defaultMain' ('Tasty.testGroup' "tests" [unsafePerformIO ('testSpec' "spec" mySpec)])
 -- @
 
--- | Create a <https://hackage.haskell.org/package/tasty tasty> 'T.TestTree' from an
--- <https://hackage.haskell.org/package/hspec hspec> 'H.Spec'.
+-- | Create a @<https://hackage.haskell.org/package/tasty tasty>@ 'Tasty.TestTree' from an
+-- @<https://hackage.haskell.org/package/hspec hspec>@ 'Hspec.Spec'.
 testSpec :: Tasty.TestName -> Hspec.Spec -> IO Tasty.TestTree
 testSpec name spec = do
   trees <- testSpecs spec
   pure (Tasty.testGroup name trees)
 
--- | Create a list of <https://hackage.haskell.org/package/tasty tasty> 'T.TestTree' from an
--- <https://hackage.haskell.org/package/hspec hspec> 'H.Spec'. This returns the same tests as 'testSpec'
--- but doesn't create a <https://hackage.haskell.org/package/tasty tasty> test group from them.
+-- | Create a list of @<https://hackage.haskell.org/package/tasty tasty>@ 'Tasty.TestTree' from an
+-- @<https://hackage.haskell.org/package/hspec hspec>@ 'Hspec.Spec'. This returns the same tests as 'testSpec', but
+-- doesn't create a @<https://hackage.haskell.org/package/tasty tasty>@ test group from them.
 testSpecs :: Hspec.Spec -> IO [Tasty.TestTree]
 testSpecs spec = do
   -- Here we do as hspec does, which is pre-process a spec by focusing the whole thing, which is a no-op if
@@ -157,10 +145,10 @@ instance Tasty.Providers.IsTest Item where
         Tasty.Options.Option (Proxy :: Proxy Tasty.SmallCheck.SmallCheckDepth)
       ]
 
--- | How to treat @hspec@ pending tests.
+-- | How to treat @<https://hackage.haskell.org/package/hspec hspec>@ pending tests.
 --
--- @tasty@ does not have the concept of pending tests, so we must map them to
--- either successes or failures. By default, they are treated as failures.
+-- @<https://hackage.haskell.org/package/tasty tasty>@ does not have the concept of pending tests, so we must map them
+-- to either successes or failures. By default, they are treated as failures.
 --
 -- Set via the command line flag @--treat-pending-as (success|failure)@.
 data TreatPendingAs
