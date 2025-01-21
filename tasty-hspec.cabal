@@ -12,7 +12,7 @@ name: tasty-hspec
 synopsis: Hspec support for the Tasty test framework.
 tested-with: GHC == 9.6.5, GHC == 9.8.2, GHC == 9.10.1, GHC == 9.12.1
 version: 1.2.0.4
-x-revision: 5
+x-revision: 6
 
 extra-doc-files:
   .gitignore
